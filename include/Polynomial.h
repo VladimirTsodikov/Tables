@@ -42,6 +42,12 @@ protected:	//реализуем внутреннюю структуру - мон
 		{
 			return (fabs(coeff - Mon.coeff) < 1e-10 && degree == Mon.degree) ? true : false;	//если коэффициенты до некоторой степени точности равны 
 		}		//и степени при этом равны, возвращаем true. Иначе false
+		bool operator!=(const Monomial& Mon) { return !(*this == Mon);  }
+		bool operator<(const Monomial& Mon)
+		{
+			return ((degree < Mon.degree) && ((degree == Mon.degree) && coeff < Mon.coeff - 1e-10)) ? true : false;	//если степень нашего числа меньше ИЛИ степени чисел равны, 
+		}		//но коэффициент нашего числа меньше (значительно меньше - учитываем погрешность double) - возвращаем true
+		bool operator>(const Monomial& Mon) { return (!(*this < Mon) && !(*this == Mon)); }		//не меньше и не равен!
 	};
 protected:
 	Monomial* head;
@@ -93,7 +99,7 @@ public:
 		}
 		delete head;
 	}
-	void Print();	//распечатка полинома
+	void Print() const;	//распечатка полинома
 	Polynomial& operator+=(const Polynomial&);
 	Polynomial operator+(const Polynomial&);
 	Polynomial& operator-=(const Polynomial&);
@@ -105,6 +111,8 @@ public:
 	Polynomial operator*(const double&);
 	bool operator==(const Polynomial&) const;	//константный метод - не меняет поля класса
 	bool operator!=(const Polynomial&) const;
+	bool operator<(const Polynomial&) const;
+	bool operator>(const Polynomial&) const;
 	Polynomial& operator=(const Polynomial& to_copy)
 	{
 		Monomial* tmp1 = head, * tmp2 = to_copy.head->next;
@@ -132,6 +140,11 @@ public:
 	Monomial front();	//возвращает первый моном (сразу за головой)
 	void clear();	//очистка списка (останется только голова)
 	int GetCount() { return count; }	//возвращает количество элементов (звеньев) в списке
+
+	friend std::ostream& operator<<(std::ostream& stream, const Polynomial& pol) {	//вывод полинома 
+		pol.Print();
+		return stream;
+	}
 };
 Polynomial::Monomial* Polynomial::translator(std::string &str)	//упрощённый транслятор. ПОСЛЕДОВАТЕЛЬНО СЧИТЫВАЕМ: коэффициент, если есть, степени x, y, z. Строка должна быть без пробелов
 {
@@ -255,7 +268,7 @@ void Polynomial::insert(Monomial* to_ins)	//вставляем САМО ЗВЕН
 	}
 }
 
-void Polynomial::Print()
+void Polynomial::Print() const
 {
 	if (count == 0) { std::cout << 0; }
 	else 
@@ -454,6 +467,34 @@ bool Polynomial::operator==(const Polynomial& Pol) const
 bool Polynomial:: operator!=(const Polynomial& Pol) const
 {
 	return !(*this == Pol);
+}
+
+bool Polynomial::operator<(const Polynomial& Pol) const
+{
+	if (Pol == *this) return false;
+	bool lower = true;			//если попали сюда, полиномы уже точно не равны
+	Monomial* tmp1 = head->next, * tmp2 = Pol.head->next;
+	while (tmp1 != head && tmp2 != Pol.head)	//на tmp2 условие уже нужно, т.к. количество звеньев в полиномах может быть различно
+	{
+		if (*tmp1 == *tmp2)
+		{
+			tmp1 = tmp1->next;
+			tmp2 = tmp2->next;
+		}
+		else if (!(*tmp1 > *tmp2))
+		{
+			lower = false;
+			break;
+		}
+	}
+	if (lower == true)	//если дошли до конца общего размера двух полиномов, и все звенья были равны, то больше будет тот полином, у которого больше звеньев. Полиномы не могут быть целиком равны, т.к. первая строчка пройдена
+		(count < Pol.count) ? (lower = true) : (lower = false);	//если звеньев меньше, то и знак меньше. Иначе больше.
+	return lower;
+}
+
+bool Polynomial::operator>(const Polynomial& Pol) const
+{
+	return (!(*this < Pol) && !(*this == Pol));	//должен быть не меньше и не равен
 }
 
 bool Polynomial::search(const Monomial& Mon)

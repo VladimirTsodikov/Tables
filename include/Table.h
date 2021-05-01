@@ -4,7 +4,7 @@
 #include <vector> //для собственно самой таблицы - это вектор пар ключ-значение
 #include <algorithm> //для функции сортировки и lower_bound
 
-template <class ValType = Polynomial>
+template <class ValType>
 class Table	{
 public:
 	virtual void insert(size_t key, const ValType& value_to_ins) = 0;	//производит вставку элемента с соответствующим ключом в таблицу. Если такой ключ в таблице уже есть, выбрасываем исключение
@@ -46,14 +46,14 @@ public:
 	void Print() override {
 		if (empty()) std::cout << "Table is empty\n";
 		else {
-			std::cout << "Key:" << '\t' << '|' << '\t' << "Value" << '\n';
+			std::cout << "Key:" << '\t' << '|' << '\t' << "Value:" << '\t' << '\t' << "Table's size is " << GetSize() << '\n';
 			for (auto x : data)
 				std::cout << x.first << '\t' << '|' << '\t' << x.second << '\n';
 		}
 	}
 };
 
-template <class ValType>
+template <class ValType = Polynomial>
 class UnorderedTable : public ArrayTable<ValType> {
 public:
 	UnorderedTable() : ArrayTable() {}
@@ -99,12 +99,12 @@ public:
 	}
 };
 
-template <class ValType>
+template <class ValType = Polynomial>
 class OrderedTable : public ArrayTable<ValType> {
 public:
 	OrderedTable() : ArrayTable() {}
 	OrderedTable(const ArrayTable& to_copy) : ArrayTable(to_copy) {	//в этом случае недостаточно просто скопировать тот вектор значений, который есть в to_copy: если таблица, которую копируем, была неупорядоченная
-		std::sort(data, data + size);	//а такое возможно, т.к. копия идёт от общего класса ArrayTable, к которому относятся и неупорядоченные таблицы, то скопированный вектор пар нужно ещё отсортировать!
+		std::sort(data.begin(), data.end());	//а такое возможно, т.к. копия идёт от общего класса ArrayTable, к которому относятся и неупорядоченные таблицы, то скопированный вектор пар нужно ещё отсортировать!
 	}	//используем стандартную сортировку, по умолчанию идёт по возрастанию. от начала массива (вектора) до элемента data[size-1] (то есть не включая правую границу. Сортировка по ключу! Одинаковых ключей быть не может! СОртировка по значению не нужна -> ПЕРЕГРУЖАТЬ БОЛЬШЕ И МЕНЬШЕ У ПОЛИНОМОВ НЕ ТРЕБУЕТСЯ!
 
 	void insert(size_t key, const ValType& value_to_ins) override {
@@ -112,36 +112,9 @@ public:
 			if (x.first == key)
 				throw "Insert failed: record with the same key already exists in the table";
 		}
-
-
-	//	if (empty()) data.push_back(std::make_pair(key, value_to_ins));
-		/*else {*/
-			auto lower = lower_bound(data.begin(), data.end(), std::make_pair(key, value_to_ins));
-			//if (lower != data.end())
-				data.insert(lower, std::make_pair(key, value_to_ins));		//вставка перед i+1-ой позицией нашей пары
-			//else data.push_back(std::make_pair(key, value_to_ins));
-		
-		/*
-		auto it = data.begin();
-
-		auto lower = lower_bound(data.begin(), data.end(), std::make_pair(key, value_to_ins));
-		//if (*it != nullptr)							//если вектор не пуст, то можем разыменовать указаатель и искать. Иначе вставка просто в начало
-			while (it->first < key) 
-				++it;
-		data.insert(it, std::make_pair(key, value_to_ins));		//вставка перед i+1-ой позицией нашей пары
-		/*
-		int i;
-		for (i = size - 1; i >=0 ; i--) {	//если дошли до сюда, значит, всё в порядке. Переписываем все записи, ключи которых больше, ниже; освобождаем место для вставки
-			if (key < data[i].first)		//идём до самого начала вектора
-				data[i + 1] = data[i];
-			/*{
-				data[i + 1].first = data[i].first;
-				data[i + 1].second = data[i].second;
-			}
-			else break;
-		}
-		data.insert(i + 1, std::make_pair(key, value_to_ins));		//вставка перед i+1-ой позицией нашей пары
-		*/size++;
+		auto lower = lower_bound(data.begin(), data.end(), std::make_pair(key, value_to_ins));	//ищет позицию, в которой вставляемая пара будет не больше, чем следующая
+			data.insert(lower, std::make_pair(key, value_to_ins));	//вставка на анйденную позицию
+		size++;
 	}
 
 	void erase(size_t key) override {

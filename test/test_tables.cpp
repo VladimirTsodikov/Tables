@@ -2,166 +2,190 @@
 #include "Table.h"
 #include <gtest.h>
 
-TEST(Table, can_create_polynomial_by_constructor_of_default)
+TEST(UnorderedTable, can_create_unordered_table_by_constructor_of_default)
 {
-	ASSERT_NO_THROW(int a);
-}
-/*
-TEST(Polynomial, can_create_polynomial_by_constructor_with_parametrs)
-{
-	ASSERT_NO_THROW(Polynomial a("12x+5"));
+	ASSERT_NO_THROW(UnorderedTable<> a);
 }
 
-TEST(Polynomial, can_create_polynomial_by_constructor_of_copy)
+TEST(UnorderedTable, can_create_unordered_table_by_constructor_of_copy)
 {
-	Polynomial a("43x^2y-35z");
-	ASSERT_NO_THROW(Polynomial b(a));
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(124, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(21, pol2);
+	ASSERT_NO_THROW(UnorderedTable<> b(a));
 }
 
-TEST(Polynomial, throw_then_negative_degree)
+TEST(UnorderedTable, can_insert_in_empty_table)
 {
-	ASSERT_ANY_THROW(Polynomial a("12x^-4+5"));
+	UnorderedTable<> a; 
+	Polynomial pol1("2x^3+4");
+	ASSERT_NO_THROW(a.insert(1,pol1));
 }
 
-TEST(Polynomial, throw_then_too_large_degree)
+TEST(UnorderedTable, can_insert_in_non_empty_table)
 {
-	ASSERT_ANY_THROW(Polynomial a("12xyz^1024+5"));
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4");
+	ASSERT_NO_THROW(a.insert(42, pol2));
+	EXPECT_EQ(2, a.GetSize());
 }
 
-TEST(Polynomial, operator_of_equal_is_correctly)
+TEST(UnorderedTable, throw_then_insert_with_index_existing_in_the_table)
 {
-	Polynomial a("43x^2y-35z");
-	Polynomial b("12x+5");
-	ASSERT_NO_THROW(b = a);
-	EXPECT_EQ(b, a);
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4");
+	ASSERT_ANY_THROW(a.insert(1, pol2));
 }
 
-TEST(Polynomial, operator_of_doudle_equal_is_correctly)	
+TEST(UnorderedTable, can_erase_element_from_table)
 {
-	Polynomial a("43x^2y-35z");
-	Polynomial b("-35z+24+43x^2y-24");
-	EXPECT_EQ(true, a==b);
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	ASSERT_NO_THROW(a.erase(1));
+	EXPECT_EQ(1, a.GetSize());
 }
 
-TEST(Polynomial, operator_of__not_equal_is_correct)
+TEST(UnorderedTable, can_erase_last_element_from_table)
 {
-	Polynomial a("43x^2y-35z");
-	Polynomial b("-35z+24");
-	EXPECT_EQ(true, a != b);
-}
-
-TEST(Polynomial, can_delete_monomial_with_zero_coefficients)
-{
-	Polynomial a("15xyz-23y+4"), b("-4");
-	EXPECT_EQ(3, a.GetCount());
-	a += b;	//15xyz-23y
-	EXPECT_EQ(2, a.GetCount());
-}
-
-TEST(Polynomial, can_to_group_monomials_with_the_same_coefficients)
-{
-	Polynomial a("15xyz-23y+4"), b("12xyz");
-	EXPECT_EQ(3, a.GetCount());
-	a += b;	//27xyz-23y+4
-	EXPECT_EQ(3, a.GetCount());	
-}
-
-TEST(Polynomial, can_AddEq_correctly)
-{
-	Polynomial a("32x^4yz^5"), b("x^7+12y"), c("x^7+32x^4yz^5+12y");
-	a += b;
-	EXPECT_EQ(c, a);
-}
-
-TEST(Polynomial, can_Add_correctly)
-{
-	Polynomial a("32x^4yz^5"), b("x^7+12y"), c("x^7+32x^4yz^5+12y"), d;
-	d = a + b;
-	EXPECT_EQ(c, d);
-}
-
-TEST(Polynomial, can_SubEq_correctly)
-{
-	Polynomial a("32x^4yz^5"), b("x^7+12y"), c("-x^7+32x^4yz^5-12y");
-	a -= b;
-	EXPECT_EQ(c, a);
-}
-
-TEST(Polynomial, can_Sub_correctly)
-{
-	Polynomial a("32x^4yz^5"), b("x^7+12y"), c("-x^7+32x^4yz^5-12y"), d;
-	d = a - b;
-	EXPECT_EQ(c, d);
-}
-
-TEST(Polynomial, can_MultEq_Pol_and_Pol_correctly)
-{
-	Polynomial a("x^2+y"), b("7x+z"), c("7x^3+x^2z+7xy+yz");
-	a *= b;
-	EXPECT_EQ(c, a);
-}
-
-TEST(Polynomial, can_Mult_Pol_and_Pol_correctly)
-{
-	Polynomial a("x^2+y"), b("7x+z"), c("7x^3+x^2z+7xy+yz"), d;
-	d = a * b;
-	EXPECT_EQ(c, d);
-}
-
-TEST(Polynomial, throw_when_too_large_degree_after_Mult)
-{
-	Polynomial a("xy^1020"), b("-4xy^13"), c;
-	ASSERT_ANY_THROW(c = a * b);
-}
-
-TEST(Polynomial, can_MultEq_Pol_and_Scalar_correctly)
-{
-	Polynomial a("x^2y^109+y^65z+12"), b("7x^2y^109+7y^65z+84");
-	a *= 7;
-	EXPECT_EQ(b, a);
-}
-
-TEST(Polynomial, can_Mult_Pol_and_Scalar_correctly)
-{
-	Polynomial a("x^2y^109+y^65z+12"), b("7x^2y^109+7y^65z+84"), c;
-	c = a * 7;
-	EXPECT_EQ(b, c);
-}
-
-TEST(Polynomial, can_Add_when_input_Pol_is_empty)
-{
-	Polynomial a("x^2y^109+y^65z+12"), b, c;
-	ASSERT_NO_THROW(c = a+b);
-	EXPECT_EQ(a, c);
-}
-
-TEST(Polynomial, can_Mult_when_input_Pol_is_empty)
-{
-	Polynomial a("x^2y^109+y^65z+12"), b;
-	ASSERT_NO_THROW(a *= b);
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	a.erase(1);
+	ASSERT_NO_THROW(a.erase(42));
+	EXPECT_EQ(0, a.GetSize());
 	EXPECT_EQ(true, a.empty());
 }
 
-TEST(Polynomial, function_empty_is_correct)
+TEST(UnorderedTable, throw_when_erase_with_key_which_not_present_in_the_table)
 {
-	Polynomial a("12x+5"), b("-5-12x^1"), c;
-	EXPECT_EQ(false, a.empty());
-	a += b;
-	EXPECT_EQ(true, a.empty());
-	EXPECT_EQ(true, c.empty());
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	ASSERT_ANY_THROW(a.erase(2));
 }
 
-TEST(Polynomial, function_clear_is_correct)
+TEST(UnorderedTable, can_find_in_table)
 {
-	Polynomial a("12y-4");
-	EXPECT_EQ(false, a.empty());
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	Polynomial pol3("98y^2z^4+7xz-2x"); a.insert(23, pol3);
+	EXPECT_EQ(pol2, a.find(42).second);
+	EXPECT_EQ(3, a.GetSize());
+}
+
+TEST(UnorderedTable, can_clear_table)
+{
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	EXPECT_EQ(2, a.GetSize());
+
 	a.clear();
+	EXPECT_EQ(0, a.GetSize());
 	EXPECT_EQ(true, a.empty());
 }
 
-TEST(Polynomial, can_clear_empty_Pol)
+/////////////////////////////////////////////////////////
+TEST(OrderedTable, can_create_ordered_table_by_constructor_of_default)
 {
-	Polynomial a;
-	ASSERT_NO_THROW(a.clear());
+	ASSERT_NO_THROW(OrderedTable<> a);
 }
-*/
+
+TEST(OrderedTable, can_create_ordered_table_by_constructor_of_copy_1)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(124, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(21, pol2);
+	ASSERT_NO_THROW(OrderedTable<> b(a));
+}
+
+TEST(OrderedTable, can_create_ordered_table_by_constructor_of_copy_2)
+{
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(124, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(21, pol2);
+	ASSERT_NO_THROW(OrderedTable<> b(a));		//будут в правильном порядке, отсортированы!
+}
+
+TEST(OrderedTable, can_insert_in_empty_table)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4");
+	ASSERT_NO_THROW(a.insert(1, pol1));
+}
+
+TEST(OrderedTable, can_insert_in_non_empty_table)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4");
+	ASSERT_NO_THROW(a.insert(42, pol2));
+	EXPECT_EQ(2, a.GetSize());
+}
+
+TEST(OrderedTable, throw_then_insert_with_index_existing_in_the_table)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4");
+	ASSERT_ANY_THROW(a.insert(1, pol2));
+}
+
+TEST(OrderedTable, can_erase_element_from_table)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	ASSERT_NO_THROW(a.erase(1));
+	EXPECT_EQ(1, a.GetSize());
+}
+
+TEST(OrderedTable, can_erase_last_element_from_table)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	a.erase(1);
+	ASSERT_NO_THROW(a.erase(42));
+	EXPECT_EQ(0, a.GetSize());
+	EXPECT_EQ(true, a.empty());
+}
+
+TEST(OrderedTable, throw_when_erase_with_key_which_not_present_in_the_table)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	ASSERT_ANY_THROW(a.erase(2));
+}
+
+TEST(OrderedTable, can_find_in_table)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	Polynomial pol3("98y^2z^4+7xz-2x"); a.insert(23, pol3);
+	EXPECT_EQ(pol2, a.find(42).second);
+	EXPECT_EQ(3, a.GetSize());
+}
+
+TEST(OrderedTable, can_clear_table)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	EXPECT_EQ(2, a.GetSize());
+
+	a.clear();
+	EXPECT_EQ(0, a.GetSize());
+	EXPECT_EQ(true, a.empty());
+}
+
+TEST(OrderedTable, no_problem_when_clear_empty_table)
+{
+	OrderedTable<> a;
+	ASSERT_NO_THROW(a.clear());
+	EXPECT_EQ(0, a.GetSize());
+}
