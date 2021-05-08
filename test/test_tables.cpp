@@ -76,6 +76,14 @@ TEST(UnorderedTable, can_find_in_table)
 	EXPECT_EQ(3, a.GetSize());
 }
 
+TEST(UnorderedTable, throw_when_search_for_a_non_existent_entry)
+{
+	UnorderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	ASSERT_ANY_THROW(a.find(15));
+}
+
 TEST(UnorderedTable, can_clear_table)
 {
 	UnorderedTable<> a;
@@ -165,10 +173,18 @@ TEST(OrderedTable, can_find_in_table)
 {
 	OrderedTable<> a;
 	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
-	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2); a.insert(34, pol2);
 	Polynomial pol3("98y^2z^4+7xz-2x"); a.insert(23, pol3);
-	EXPECT_EQ(pol2, a.find(42).second);
-	EXPECT_EQ(3, a.GetSize());
+	EXPECT_EQ(pol2, a.find(34).second);
+	EXPECT_EQ(4, a.GetSize());
+}
+
+TEST(OrderedTable, throw_when_search_for_a_non_existent_entry)
+{
+	OrderedTable<> a;
+	Polynomial pol1("2x^3+4"); a.insert(1, pol1);
+	Polynomial pol2("-7y^12+xy^3-xz^25+4"); a.insert(42, pol2);
+	ASSERT_ANY_THROW(a.find(15));
 }
 
 TEST(OrderedTable, can_clear_table)

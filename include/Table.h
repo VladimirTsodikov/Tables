@@ -135,18 +135,29 @@ public:
 	}
 
 	std::pair<size_t, ValType> find(size_t key) override {
-		bool isElem = false;
-		int i = 0;
-		for (; i < size; i++) {	//ищем во всём векторе. Ключ в таблице либо существует в ЕДИНСТВЕННОМ экземпляре, либо не существует
-			if (data[i].first == key)
-			{
-				isElem = true;		//выходим из цикла. Нашли
-				break;
-			}
-			if (data[i].first > key)	//тоже выходим из цикла. Не нашли. Дальше искать смысла нет, т.к. упорядоченно по ключам
-				break;
+		//bool isElem = false;
+		//int i = 0;
+		//for (; i < size; i++) {	//ищем во всём векторе. Ключ в таблице либо существует в ЕДИНСТВЕННОМ экземпляре, либо не существует
+		//	if (data[i].first == key)
+		//	{
+		//		isElem = true;		//выходим из цикла. Нашли
+		//		break;
+		//	}
+		//	if (data[i].first > key)	//тоже выходим из цикла. Не нашли. Дальше искать смысла нет, т.к. упорядоченно по ключам
+		//		break;
+		//}
+		//if (!isElem) throw "The deletion did not happen: a record with such a key does not exist in the table";
+		//return data[i];	//если дошли до сюда, то пара с таким ключом в таблице действительно присутствует, исключение не сработает, и КОПИЮ этой пару мы и вернём
+	
+		int l = -1, r = size, m;
+		while (l < r-1) {
+			m = (l + r) / 2;
+			if (data[m].first < key)
+				l = m;
+			else
+				r = m;
 		}
-		if (!isElem) throw "The deletion did not happen: a record with such a key does not exist in the table";
-		return data[i];	//если дошли до сюда, то пара с таким ключом в таблице действительно присутствует, исключение не сработает, и КОПИЮ этой пару мы и вернём
+		if (data[r].first == key) return data[r];
+		else throw "The deletion did not happen: a record with such a key does not exist in the table";
 	}
 };
