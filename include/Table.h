@@ -2,7 +2,12 @@
 #include "Polynomial.h"	//чтобы назначить в качестве типа по умолчанию
 #include <iostream>
 #include <vector> //для собственно самой таблицы - это вектор пар ключ-значение
-#include <algorithm> //для функции сортировки и lower_bound
+#include <algorithm> //для функции сортировки и lower_bound и find
+#include <list>	//для метода цепочек в хэш-таблицах
+
+#define LoadFactor 0.75		//коэффициент загруженности таблицы: отнношение числа записей в таблице size к числу ячеек в векторе data.size()
+#define KoefForStock 1.3	//коэффициент с запасом - для конструктора копирования и resize
+
 
 template <class ValType>
 class Table	{
@@ -43,7 +48,7 @@ public:
 		return (size == 0);
 	}
 
-	void Print() override {
+	void Print() override {		//неупорядоченный вывод - печать будет сгруппирована по значениям хэша (то есть по спискам поочерёдно
 		if (empty()) std::cout << "Table is empty\n";
 		else {
 			std::cout << "Key:" << '\t' << '|' << '\t' << "Value:" << '\t' << '\t' << "Table's size is " << GetSize() << '\n';
@@ -51,6 +56,8 @@ public:
 				std::cout << x.first << '\t' << '|' << '\t' << x.second << '\n';
 		}
 	}
+
+//	template <ValType> friend class HashTable;	//для того, чтобы конструктор копирования у хэш-функций мог обратиться к полям вектора
 };
 
 template <class ValType = Polynomial>
@@ -113,7 +120,7 @@ public:
 				throw "Insert failed: record with the same key already exists in the table";
 		}
 		auto lower = lower_bound(data.begin(), data.end(), std::make_pair(key, value_to_ins));	//ищет позицию, в которой вставляемая пара будет не больше, чем следующая
-			data.insert(lower, std::make_pair(key, value_to_ins));	//вставка на анйденную позицию
+		data.insert(lower, std::make_pair(key, value_to_ins));	//вставка на анйденную позицию
 		size++;
 	}
 
@@ -159,5 +166,95 @@ public:
 		}
 		if (data[r].first == key) return data[r];
 		else throw "The deletion did not happen: a record with such a key does not exist in the table";
+	}
+};
+
+template<class ValType = Polynomial>		//наследуем от виртуального класса Table. Хэш-таблицы всё-таки не таблицы на векторе, это другое и функции печати/копирования будут другими
+class HashTable : public Table<ValType> {	//создаём таблицу (т.е. вектор) списков пар ключ-значение
+protected:
+	std::vector<std::list<std::pair<size_t, ValType>>> data;
+	size_t size = 0;
+private: 
+	size_t HashF(size_t x, size_t size_table) {		//hash-function
+		x = ((x >> 16) ^ x) * 0x45d9f3b;
+		x = ((x >> 16) ^ x) * 0x45d9f3b;
+		x = (x >> 16) ^ x;
+		return x % size_table;
+	}
+
+	void resize() {	//если количество записей в таблице стало большим, то таблица замедаляется, то нужно увеличить размер вектора. Хэши будут пересчитаны
+		std::vector<std::list<std::pair<size_t, ValType>>> tmp((int)(data.size() * KoefForStock));	//увеличиваем размер вектора в 1.3 раза. При этом сейчас число записей во всей таблице не превышает 0.75 от числа её ячеек
+			for (int i = 0; i < data.size(); i++)	//рассматриваем каждую ячейку вектора и каждое звено списка
+				for (auto it = data[i].begin(); it != data[i].end(); ++it)
+					tmp[HashF(it->first, tmp.size())].push_front(std::make_pair(it->first, it->second));
+		data.clear();
+		data = tmp;
+	}
+
+public:
+	HashTable() {		//создаём заранее таблицу побольше, чтобы resize не потребовался дольше
+		data = std::vector<std::list<std::pair<size_t, ValType>>>(100);
+		size = 0;
+	}
+	/*HashTable(const ArrayTable<ValType>& to_copy) {	//копирование таблиц на массиве (упор/неупор)		не нужно проверять единственность ключа: если уже была таблица, то в ней всё верно. Поэтому просто идём по массиву и вычисляя хэш вставляем в новую
+		data = std::vector<std::list<std::pair<size_t, ValType>>>((int)(to_copy.size * KoefForStock));
+		for (auto it = to_copy.data.begin(); it != to_copy.data.end(); ++it)
+			data[HashF(it->first, data.size())].push_front(std::make_pair(it->first, it->second));
+		size = to_copy.size;
+	}*/
+	HashTable(const HashTable<ValType>& to_copy) {	//копирование хэш-таблиц. Будем считать, что то, что копируем, составлено корректно. Размер при копировании и хэш-значения ключей будут теми же
+		data = to_copy.data;
+		size = to_copy.size;
+	}
+
+	void insert(size_t key, const ValType& to_ins) override {		//проверка наличия за O(N/m) в среднем, вставка за O(1)
+		if ((double)(size) / (double)(data.size()) > LoadFactor) resize();	//если нужно, делаем перепаковку
+
+		size_t hash = HashF(key, data.size());		//вычислили хэш, затем идём в ячейку вектора по этому хэшу и ищем в соответствующем списке
+		std::list<std::pair<size_t, ValType>>::iterator it;
+		for (it=data[hash].begin(); it != data[hash].end(); ++it)
+			if (it->first == key) throw "Insert failed: record with the same key already exists in the table";
+		data[hash].push_front(std::make_pair(key, to_ins));	//иначе всё хорошо, вставляем в список в начало
+		size++;
+	}
+
+	void erase(size_t key) override {
+		size_t hash = HashF(key, data.size());
+		std::list<std::pair<size_t, ValType>>::iterator it;
+		for (it = data[hash].begin(); it != data[hash].end(); ++it)
+			if (it->first == key) break;
+		if (it == data[hash].end())	throw "The deletion did not happen: a record with such a key does not exist in the table";	//если долши до конца списка и элемент с таким ключом найден не был
+		data[hash].erase(it);
+		size--;
+	}
+
+	std::pair<size_t, ValType> find(size_t key) override {
+		size_t hash = HashF(key, data.size());
+		std::list<std::pair<size_t, ValType>>::iterator it;
+		for (it = data[hash].begin(); it != data[hash].end(); ++it)
+			if (it->first == key) break;
+		if (it == data[hash].end()) throw "The deletion did not happen: a record with such a key does not exist in the table";
+		return std::make_pair(it->first, it->second);
+	}
+
+	size_t GetSize() override { return size; }
+	size_t VectorSize() { return data.size(); }
+
+	void clear() override {
+		data.clear();
+		data = std::vector<std::list<std::pair<size_t, ValType>>>(100);	//чтобы не было проблем, когда снова начнём заполнять таблицу. Уже есть заготовка, чтобы вставлять нвоые элементы
+		size = 0;
+	}
+	
+	bool empty() override { return (size == 0); }
+
+	void Print() override {
+		if (empty()) std::cout << "Table is empty\n";
+		else {
+			std::cout << "Key:" << '\t' << '|' << '\t' << "Value:" << '\t' << '\t' << "Table's size is " << GetSize() << '\n';
+			for (int i = 0; i < data.size(); i++)	//рассматриваем каждую ячейку вектора и каждое звено списка
+				for (auto it = data[i].begin(); it != data[i].end(); ++it)
+					std::cout << it->first << '\t' << '|' << '\t' << it->second << '\n';
+		}
 	}
 };
